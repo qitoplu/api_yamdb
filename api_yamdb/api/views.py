@@ -1,3 +1,9 @@
-from django.shortcuts import render
+from rest_framework import viewsets
+from .serializers import GenreSerializer
+from reviews.models import Genres
 
-# Create your views here.
+
+class GenreViewSet(viewsets.ModelViewSet):
+    queryset = Genres.objects.all()
+    serializer_class = GenreSerializer
+
