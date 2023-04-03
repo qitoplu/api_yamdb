@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.db.models import Avg
 from rest_framework import viewsets
 
 from reviews.models import Review, Title
@@ -10,6 +11,14 @@ from api.serializers import (
     ReviewSerializer,
 )
 
+
+class TitleViewSet(viewsets.ModelViewSet):
+    """Вьюсет для произведения."""
+    # С помощью annotate добавляем к объектам из Title среднюю оценку.
+    queryset = (
+        Title.objects.all().annotate(Avg('reviews__score')).order_by('name')
+    )
+    ...
 
 class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для отзывов."""
