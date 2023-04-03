@@ -162,7 +162,6 @@ class Title(models.Model):
     )
     genre = models.ManyToManyField(
         Genres,
-        on_delete=models.SET_NULL,
         related_name='titles'
     )
 
