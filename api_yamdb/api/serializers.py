@@ -5,7 +5,7 @@ from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import AccessToken
 
-from reviews.models import User, Genres, Category, Review, Comment
+from reviews.models import User, Genres, Category, Review, Comment, Title
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -105,6 +105,32 @@ class GenreSerializer(serializers.ModelSerializer):
         fields = '__all__',
         model = Genres
 
+
+class FirstTitleSerializer(serializers.ModelSerializer):
+    category = CategorySerializer(read_only=True)
+    genre = GenreSerializer(read_only=True, many=True)
+    rate = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        fields = '__all__',
+        model = Title
+
+
+class SecondTitleSerializer(serializers.ModelSerializer):
+    category = serializers.SlugRelatedField(
+        queryset=Category.objects.all(),
+        slug_field='slug',
+        many=True,
+    )
+    genre = serializers.SlugRelatedField(
+        queryset=Genres.objects.all(),
+        slug_field='slug',
+        many=True
+    )
+
+    class Meta:
+        fields = '__all__'
+        model = Title
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатов для отзывов."""

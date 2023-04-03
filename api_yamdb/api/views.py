@@ -8,13 +8,15 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenViewBase
 
-from reviews.models import User, Category, Genres, Title, Review
+from reviews.models import User, Category, Genres, Title, Review, Title
 from .permissions import AdminOnly
 from .serializers import (SignUpSerializer,
                           TokenSerializer,
                           UserSerializer,
                           CategorySerializer,
                           GenreSerializer,
+                          FirstTitleSerializer,
+                          SecondTitleSerializer,
                           CommentsSerializer,
                           ReviewSerializer,)
 
@@ -114,12 +116,14 @@ class GenreViewSet(viewsets.ModelViewSet):
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    """Вьюсет для произведения."""
-    # С помощью annotate добавляем к объектам из Title среднюю оценку.
-    queryset = (
-        Title.objects.all().annotate(Avg('reviews__score')).order_by('name')
-    )
-    ...
+    queryset = Title.objects.annotate(
+        rate=Avg('reviews__score')
+    ).all()
+
+    def get_serializer_class(self):
+        if self.action in ('list', 'retrieve'):
+            return FirstTitleSerializer
+        return SecondTitleSerializer
 
 
 class ReviewViewSet(viewsets.ModelViewSet):

@@ -145,8 +145,32 @@ class Genres(models.Model):
 
 
 class Title(models.Model):
-    """Модель произведения."""
-    pass
+    name = models.CharField(
+        max_length=256,
+        db_index=True,
+    )
+    year = models.IntegerField()
+    description = models.CharField(
+        max_length=256,
+    )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='titles'
+    )
+    genre = models.ManyToManyField(
+        Genres,
+        on_delete=models.SET_NULL,
+        related_name='titles'
+    )
+
+    class Meta:
+        verbose_name = 'Произведение'
+
+    def __str__(self):
+        return self.name
 
 
 class Review(models.Model):
