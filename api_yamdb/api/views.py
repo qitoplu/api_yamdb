@@ -1,4 +1,5 @@
 from rest_framework import filters, status, viewsets
+from django.db.models import Avg
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.generics import get_object_or_404
 from rest_framework.decorators import action
@@ -7,13 +8,19 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenViewBase
 
-from reviews.models import User, Category, Genres
-from .permissions import AdminOnly, AdminOrReadOnly, AuthorOrHasRoleOrReadOnly
+from reviews.models import User, Category, Genres, Title, Review
+from .permissions import AdminOnly
 from .serializers import (SignUpSerializer,
                           TokenSerializer,
                           UserSerializer,
                           CategorySerializer,
-                          GenreSerializer)
+                          GenreSerializer,
+                          CommentsSerializer,
+                          ReviewSerializer,)
+
+from api.permissions import (
+    ReviewAndCommentPermission,
+)
 
 
 class SignUpView(CreateModelMixin,
@@ -104,3 +111,46 @@ class CategoryViewSet(viewsets.ModelViewSet):
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genres.objects.all()
     serializer_class = GenreSerializer
+
+
+class TitleViewSet(viewsets.ModelViewSet):
+    """Вьюсет для произведения."""
+    # С помощью annotate добавляем к объектам из Title среднюю оценку.
+    queryset = (
+        Title.objects.all().annotate(Avg('reviews__score')).order_by('name')
+    )
+    ...
+
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    """Вьюсет для отзывов."""
+
+    serializer_class = ReviewSerializer
+    permission_classes = [ReviewAndCommentPermission]
+
+    def get_queryset(self):
+        title_id = self.kwargs.get('title_id')
+        title = get_object_or_404(Title, id=title_id)
+        return title.reviews.all()
+
+    def perform_create(self, serializer):
+        title_id = self.kwargs.get('title_id')
+        title = get_object_or_404(Title, id=title_id)
+        serializer.save(author=self.request.user, title=title)
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    """Вьюсет для комментариев."""
+
+    serializer_class = CommentsSerializer
+    permission_classes = [ReviewAndCommentPermission]
+
+    def get_queryset(self):
+        review_id = self.kwargs.get('review_id')
+        review = get_object_or_404(Review, id=review_id)
+        return review.comments.all()
+
+    def perform_create(self, serializer):
+        review_id = self.kwargs.get('review_id')
+        review = get_object_or_404(Review, id=review_id)
+        serializer.save(author=self.request.user, review=review)
