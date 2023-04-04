@@ -102,8 +102,8 @@ class CategorySerializer(serializers.ModelSerializer):
 class GenreSerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = ('name', 'slug'),
-        model = Genres,
+        fields = ('name', 'slug')
+        model = Genres
         lookup_field = 'slug'
 
 
@@ -113,8 +113,8 @@ class FirstTitleSerializer(serializers.ModelSerializer):
     rate = serializers.IntegerField(read_only=True)
 
     class Meta:
-        fields = ('name', 'slug'),
-        model = Title,
+        fields = ('name', 'slug')
+        model = Title
         lookup_fields = 'slug'
 
 
