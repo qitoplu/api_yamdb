@@ -95,7 +95,7 @@ class UserSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = ('name', 'slug')
+        exclude = ('id',)
         model = Category
         lookup_field = 'slug'
 
@@ -103,7 +103,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class GenreSerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = ('name', 'slug')
+        exclude = ('id',)
         model = Genres
         lookup_field = 'slug'
 
@@ -111,19 +111,18 @@ class GenreSerializer(serializers.ModelSerializer):
 class FirstTitleSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     genre = GenreSerializer(read_only=True, many=True)
-    rate = serializers.IntegerField(read_only=True)
+    score = serializers.IntegerField(read_only=True)
 
     class Meta:
-        fields = ('name', 'slug')
+        fields = '__all__'
         model = Title
-        lookup_fields = 'slug'
 
 
 class SecondTitleSerializer(serializers.ModelSerializer):
     category = serializers.SlugRelatedField(
         queryset=Category.objects.all(),
         slug_field='slug',
-        many=True,
+        many=False,
     )
     genre = serializers.SlugRelatedField(
         queryset=Genres.objects.all(),

@@ -146,23 +146,31 @@ class Genres(models.Model):
 
 class Title(models.Model):
     name = models.CharField(
-        max_length=256,
-        db_index=True,
+        'название',
+        max_length=200,
+        db_index=True
     )
-    year = models.IntegerField()
-    description = models.CharField(
-        max_length=256,
+    year = models.IntegerField(
+        'год',
     )
     category = models.ForeignKey(
         Category,
         on_delete=models.SET_NULL,
+        related_name='titles',
+        verbose_name='категория',
         null=True,
-        blank=True,
-        related_name='titles'
+        blank=True
+    )
+    description = models.TextField(
+        'описание',
+        max_length=255,
+        null=True,
+        blank=True
     )
     genre = models.ManyToManyField(
         Genres,
-        related_name='titles'
+        related_name='titles',
+        verbose_name='жанр'
     )
 
     class Meta:
