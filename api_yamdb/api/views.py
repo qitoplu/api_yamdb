@@ -1,5 +1,6 @@
 from rest_framework import filters, status, viewsets
 from django.db.models import Avg
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.generics import get_object_or_404
 from rest_framework.decorators import action
@@ -11,6 +12,7 @@ from rest_framework.viewsets import GenericViewSet
 from rest_framework_simplejwt.views import TokenViewBase
 
 from reviews.models import User, Category, Genres, Title, Review
+from .filters import TitlesFilter
 from .permissions import AdminOnly, AdminOrReadOnly, AuthorOrHasRoleOrReadOnly
 from .serializers import (SignUpSerializer,
                           TokenSerializer,
@@ -25,7 +27,6 @@ from .serializers import (SignUpSerializer,
 from api.permissions import (
     ReviewAndCommentPermission,
 )
-
 
 class SignUpView(CreateModelMixin,
                  RetrieveModelMixin,
@@ -128,10 +129,12 @@ class GenreViewSet(CreateModelMixin, ListModelMixin,
 
 
 class TitleViewSet(viewsets.ModelViewSet):
-    permission_classes = (AuthorOrHasRoleOrReadOnly,)
     queryset = Title.objects.annotate(
         score=Avg('reviews__score')
     ).all()
+    permission_classes = (AdminOrReadOnly,)
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = TitlesFilter
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
