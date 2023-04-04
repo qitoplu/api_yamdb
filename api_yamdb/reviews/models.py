@@ -172,6 +172,11 @@ class Title(models.Model):
         related_name='titles',
         verbose_name='жанр'
     )
+    rating = models.IntegerField(
+        verbose_name='Рейтинг',
+        null=True,
+        default=None
+    )
 
     class Meta:
         verbose_name = 'Произведение'
@@ -188,12 +193,13 @@ class Review(models.Model):
         related_name='reviews',
     )
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='reviews'
+        User, on_delete=models.CASCADE, related_name='reviews',
+        unique=True
     )
     pub_date = models.DateTimeField(
         'Дата публикации', auto_now_add=True
     )
-    text = models.TextField()
+    text = models.TextField(null=False)
     score = models.IntegerField(
         default=0,
         validators=[
