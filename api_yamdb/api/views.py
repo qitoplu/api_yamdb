@@ -9,7 +9,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenViewBase
 
 from reviews.models import User, Category, Genres, Title, Review
-from .permissions import AdminOnly
+from .permissions import AdminOnly, AdminOrReadOnly, AuthorOrHasRoleOrReadOnly
 from .serializers import (SignUpSerializer,
                           TokenSerializer,
                           UserSerializer,
@@ -108,14 +108,17 @@ class UserViewSet(viewsets.ModelViewSet):
 class CategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    permission_classes = (AdminOrReadOnly,)
 
 
 class GenreViewSet(viewsets.ModelViewSet):
     queryset = Genres.objects.all()
     serializer_class = GenreSerializer
+    permission_classes = (AdminOrReadOnly,)
 
 
 class TitleViewSet(viewsets.ModelViewSet):
+    permission_classes = (AuthorOrHasRoleOrReadOnly,)
     queryset = Title.objects.annotate(
         rate=Avg('reviews__score')
     ).all()
@@ -130,7 +133,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для отзывов."""
 
     serializer_class = ReviewSerializer
-    permission_classes = [ReviewAndCommentPermission]
+    permission_classes = [AuthorOrHasRoleOrReadOnly,
+                          ReviewAndCommentPermission]
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
@@ -147,7 +151,8 @@ class CommentViewSet(viewsets.ModelViewSet):
     """Вьюсет для комментариев."""
 
     serializer_class = CommentsSerializer
-    permission_classes = [ReviewAndCommentPermission]
+    permission_classes = [AuthorOrHasRoleOrReadOnly,
+                          ReviewAndCommentPermission]
 
     def get_queryset(self):
         review_id = self.kwargs.get('review_id')
