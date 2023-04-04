@@ -102,8 +102,9 @@ class CategorySerializer(serializers.ModelSerializer):
 class GenreSerializer(serializers.ModelSerializer):
 
     class Meta:
-        fields = '__all__',
-        model = Genres
+        fields = ('name', 'slug'),
+        model = Genres,
+        lookup_field = 'slug'
 
 
 class FirstTitleSerializer(serializers.ModelSerializer):
@@ -112,8 +113,9 @@ class FirstTitleSerializer(serializers.ModelSerializer):
     rate = serializers.IntegerField(read_only=True)
 
     class Meta:
-        fields = '__all__',
-        model = Title
+        fields = ('name', 'slug'),
+        model = Title,
+        lookup_fields = 'slug'
 
 
 class SecondTitleSerializer(serializers.ModelSerializer):
@@ -131,6 +133,7 @@ class SecondTitleSerializer(serializers.ModelSerializer):
     class Meta:
         fields = '__all__'
         model = Title
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Сериализатов для отзывов."""
