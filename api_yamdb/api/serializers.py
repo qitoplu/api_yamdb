@@ -35,8 +35,8 @@ class SignUpSerializer(serializers.ModelSerializer):
 
 class TokenSerializer(serializers.ModelSerializer, TokenObtainPairSerializer):
 
-    def __init__(self, instance=None, data=..., **kwargs):
-        super().__init__(instance, data, **kwargs)
+    def __init__(self, instance=None, **kwargs):
+        super().__init__(instance, **kwargs)
         self.fields['password'].required = False
 
     class Meta:

@@ -4,7 +4,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.generics import get_object_or_404
 from rest_framework.decorators import action
-from rest_framework.mixins import CreateModelMixin, RetrieveModelMixin, ListModelMixin, DestroyModelMixin
+from rest_framework.mixins import (
+    CreateModelMixin,
+    RetrieveModelMixin,
+    ListModelMixin,
+    DestroyModelMixin
+)
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter
@@ -14,19 +19,18 @@ from rest_framework_simplejwt.views import TokenViewBase
 from reviews.models import User, Category, Genres, Title, Review
 from .filters import TitlesFilter
 from .permissions import AdminOnly, AdminOrReadOnly, AuthorOrHasRoleOrReadOnly
-from .serializers import (SignUpSerializer,
-                          TokenSerializer,
-                          UserSerializer,
-                          CategorySerializer,
-                          GenreSerializer,
-                          FirstTitleSerializer,
-                          SecondTitleSerializer,
-                          CommentsSerializer,
-                          ReviewSerializer,)
-
-from api.permissions import (
-    ReviewAndCommentPermission,
+from .serializers import (
+    SignUpSerializer,
+    TokenSerializer,
+    UserSerializer,
+    CategorySerializer,
+    GenreSerializer,
+    FirstTitleSerializer,
+    SecondTitleSerializer,
+    CommentsSerializer,
+    ReviewSerializer,
 )
+
 
 class SignUpView(CreateModelMixin,
                  RetrieveModelMixin,
@@ -36,15 +40,28 @@ class SignUpView(CreateModelMixin,
     serializer_class = SignUpSerializer
 
     def create(self, request, *args, **kwargs):
+        username = request.data.get("username", None)
+        email = request.data.get("email", None)
+        if username:
+            try:
+                user = User.objects.get(username=username)
+                if email and user.email != email:
+                    return Response(status=status.HTTP_400_BAD_REQUEST)
+                serializer = self.get_serializer(user)
+                headers = self.get_success_headers(serializer.data)
+                return Response(serializer.data,
+                                status=status.HTTP_200_OK,
+                                headers=headers)
+            except User.DoesNotExist:
+                pass
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK,
-            headers=headers
-        )
+
+        return Response(serializer.data,
+                        status=status.HTTP_200_OK,
+                        headers=headers)
 
     def retrieve(self, request, *args, **kwargs):
         serializer = self.get_serializer(request.data)
@@ -55,7 +72,7 @@ class SignUpView(CreateModelMixin,
             message=user.confirmation_code,
             fail_silently=False
         )
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TokenView(TokenViewBase):
@@ -74,14 +91,14 @@ class UserViewSet(viewsets.ModelViewSet):
         user = get_object_or_404(User, username=user_username)
         return user
 
-    @action(methods=['get', 'patch', 'put', 'delete'], detail=False)
+    @action(methods=['get', 'patch', 'delete'], detail=False)
     def me(self, request):
         if request.method == 'GET':
             user = User.objects.get(username=request.user.username)
             serializer = self.get_serializer(user)
             return Response(serializer.data)
 
-        if request.method == 'PATCH' or request.method == 'PUT':
+        if request.method == 'PATCH':
             partial = True if request.method == 'PATCH' else False
             user = User.objects.get(username=request.user.username)
             data = request.data.copy()
@@ -101,6 +118,18 @@ class UserViewSet(viewsets.ModelViewSet):
 
         if request.method == 'DELETE':
             raise MethodNotAllowed(method='DELETE')
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return super().update(request, *args, **kwargs)
+
+    def update(self, request, pk=None):
+        user = self.get_object()
+        serializer = self.get_serializer(user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data,
+                        status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
     def get_permissions(self):
         if self.action == 'me':
@@ -146,8 +175,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     """Вьюсет для отзывов."""
 
     serializer_class = ReviewSerializer
-    permission_classes = [AuthorOrHasRoleOrReadOnly,
-                          ReviewAndCommentPermission]
+    permission_classes = (AuthorOrHasRoleOrReadOnly, )
 
     def get_queryset(self):
         title_id = self.kwargs.get('title_id')
@@ -164,8 +192,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     """Вьюсет для комментариев."""
 
     serializer_class = CommentsSerializer
-    permission_classes = [AuthorOrHasRoleOrReadOnly,
-                          ReviewAndCommentPermission]
+    permission_classes = (AuthorOrHasRoleOrReadOnly, )
 
     def get_queryset(self):
         review_id = self.kwargs.get('review_id')
