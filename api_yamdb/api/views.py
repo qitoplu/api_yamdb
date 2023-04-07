@@ -43,8 +43,9 @@ class SignUpView(CreateModelMixin,
         username = request.data.get("username", None)
         email = request.data.get("email", None)
         if username:
-            try:
-                user = User.objects.get(username=username)
+            user = User.objects.filter(username=username)
+            if user.exists():
+                user = user.first()
                 if email and user.email != email:
                     return Response(status=status.HTTP_400_BAD_REQUEST)
                 serializer = self.get_serializer(user)
@@ -52,8 +53,6 @@ class SignUpView(CreateModelMixin,
                 return Response(serializer.data,
                                 status=status.HTTP_200_OK,
                                 headers=headers)
-            except User.DoesNotExist:
-                pass
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -94,25 +93,23 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(methods=['get', 'patch', 'delete'], detail=False)
     def me(self, request):
         if request.method == 'GET':
-            user = User.objects.get(username=request.user.username)
-            serializer = self.get_serializer(user)
+            serializer = self.get_serializer(request.user)
             return Response(serializer.data)
 
         if request.method == 'PATCH':
-            partial = True if request.method == 'PATCH' else False
-            user = User.objects.get(username=request.user.username)
+            partial = request.method = 'PATCH'
             data = request.data.copy()
-            data['role'] = user.role
+            data['role'] = request.user.role
             serializer = self.get_serializer(
-                user,
+                request.user,
                 data=data,
                 partial=partial
             )
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
 
-            if getattr(user, '_prefetched_objects_cache', None):
-                user._prefetched_objects_cache = {}
+            if getattr(request.user, '_prefetched_objects_cache', None):
+                request.user._prefetched_objects_cache = {}
 
             return Response(serializer.data)
 
